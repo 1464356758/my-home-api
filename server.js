@@ -1,7 +1,8 @@
+```js
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs');
 const fetch = require('node-fetch');
+const fs = require('fs');
 
 const app = express();
 
@@ -18,14 +19,12 @@ const DATA_FILE = './data.json';
 function getDefaultData() {
 
     return {
-
         personalInfo: {
             name: '张三',
             avatar: '',
             bio: '欢迎来到我的主页',
             links: []
         },
-
         cards: []
     };
 }
@@ -50,8 +49,6 @@ app.get('/api/save', (req, res) => {
         res.json(JSON.parse(data));
 
     } catch (e) {
-
-        console.error(e);
 
         res.status(500).json({
             message: '读取失败'
@@ -122,8 +119,6 @@ app.get('/api/video', async (req, res) => {
 
         const text = await response.text();
 
-        console.log(text);
-
         let data;
 
         try {
@@ -181,3 +176,4 @@ app.listen(PORT, () => {
 
     console.log('server running');
 });
+```
