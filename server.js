@@ -1,119 +1,107 @@
-const express = require("express");
-const cors = require("cors");
-const axios = require("axios");
+const express = require('express');
+const cors = require('cors');
+const fs = require('fs');
 
 const app = express();
 
 app.use(cors());
-app.use(express.json());
 
-/*
-========================
-配置区域
-========================
-*/
+app.use(express.json({
+    limit: '50mb'
+}));
 
-// 你的 Cloudflare 数据接口
-const DATA_API =
-  "https://my-homepage-api.qq1464356758.workers.dev/";
+const ADMIN_PASSWORD = 'mypage123';
 
-// 你的 Cloudflare 视频解析接口
-const VIDEO_API =
-  "https://proud-morning-d30b.qq1464356758.workers.dev/";
+const DATA_FILE = './data.json';
 
-/*
-========================
-测试接口
-========================
-*/
+function getDefaultData() {
+    return {
+        personalInfo: {
+            name: '张三',
+            avatar: '',
+            bio: '欢迎来到我的主页',
+            links: []
+        },
+        cards: []
+    };
+}
 
-app.get("/", (req, res) => {
-  res.json({
-    success: true,
-    message: "Render API 运行正常"
-  });
-});
-
-/*
-========================
-获取主页数据
-========================
-*/
-
-app.get("/api/data", async (req, res) => {
-  try {
-    const response = await axios.get(DATA_API);
-
-    res.json(response.data);
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message
-    });
-  }
-});
-
-/*
-========================
-保存主页数据
-========================
-*/
-
-app.post("/api/save", async (req, res) => {
-  try {
-    const response = await axios.post(DATA_API, req.body, {
-      headers: {
-        "Content-Type": "application/json"
-      }
-    });
-
-    res.json(response.data);
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message
-    });
-  }
-});
-
-/*
-========================
-视频解析代理
-========================
-*/
-
-app.get("/api/video", async (req, res) => {
-  try {
-    const url = req.query.url;
-
-    if (!url) {
-      return res.status(400).json({
-        success: false,
-        error: "缺少 url 参数"
-      });
-    }
-
-    const response = await axios.get(
-      `${VIDEO_API}?url=${encodeURIComponent(url)}`
+if (!fs.existsSync(DATA_FILE)) {
+    fs.writeFileSync(
+        DATA_FILE,
+        JSON.stringify(getDefaultData(), null, 2)
     );
+}
 
-    res.json(response.data);
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message
-    });
-  }
+app.get('/api/save', (req, res) => {
+
+    try {
+
+        const data = fs.readFileSync(
+            DATA_FILE,
+            'utf-8'
+        );
+
+        res.json(JSON.parse(data));
+
+    } catch (e) {
+
+        res.status(500).json({
+            message: '读取失败'
+        });
+    }
 });
 
-/*
-========================
-启动服务
-========================
-*/
+app.post('/api/save', (req, res) => {
+
+    try {
+
+        const password =
+            req.headers['x-admin-password'];
+
+        if (password !== ADMIN_PASSWORD) {
+
+            return res.status(403).json({
+                message: '密码错误'
+            });
+        }
+
+        const body = req.body;
+
+        if (!body.data) {
+
+            return res.status(400).json({
+                message: '缺少 data'
+            });
+        }
+
+        fs.writeFileSync(
+            DATA_FILE,
+            JSON.stringify(body.data, null, 2)
+        );
+
+        res.json({
+            success: true
+        });
+
+    } catch (e) {
+
+        console.error(e);
+
+        res.status(500).json({
+            message: '保存失败'
+        });
+    }
+});
+
+app.get('/', (req, res) => {
+
+    res.send('API OK');
+});
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log("服务启动成功：" + PORT);
+
+    console.log('server running');
 });
