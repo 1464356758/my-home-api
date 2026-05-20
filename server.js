@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
 const fetch = require('node-fetch');
 
 const app = express();
@@ -15,18 +16,22 @@ const ADMIN_PASSWORD = 'mypage123';
 const DATA_FILE = './data.json';
 
 function getDefaultData() {
+
     return {
+
         personalInfo: {
             name: '张三',
             avatar: '',
             bio: '欢迎来到我的主页',
             links: []
         },
+
         cards: []
     };
 }
 
 if (!fs.existsSync(DATA_FILE)) {
+
     fs.writeFileSync(
         DATA_FILE,
         JSON.stringify(getDefaultData(), null, 2)
@@ -45,6 +50,8 @@ app.get('/api/save', (req, res) => {
         res.json(JSON.parse(data));
 
     } catch (e) {
+
+        console.error(e);
 
         res.status(500).json({
             message: '读取失败'
@@ -93,6 +100,7 @@ app.post('/api/save', (req, res) => {
         });
     }
 });
+
 app.get('/api/video', async (req, res) => {
 
     try {
@@ -113,6 +121,8 @@ app.get('/api/video', async (req, res) => {
         const response = await fetch(api);
 
         const text = await response.text();
+
+        console.log(text);
 
         let data;
 
@@ -159,6 +169,7 @@ app.get('/api/video', async (req, res) => {
         });
     }
 });
+
 app.get('/', (req, res) => {
 
     res.send('API OK');
