@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs');
+const fetch = require('node-fetch');
 
 const app = express();
 
@@ -93,7 +93,72 @@ app.post('/api/save', (req, res) => {
         });
     }
 });
+app.get('/api/video', async (req, res) => {
 
+    try {
+
+        const biliUrl = req.query.url;
+
+        if (!biliUrl) {
+
+            return res.json({
+                error: '缺少url'
+            });
+        }
+
+        const api =
+            'https://api.5ikf.top/api/jmp?dm=sy858&key=82743b1715e2496ed8b7b06454d7494e&url=' +
+            encodeURIComponent(biliUrl);
+
+        const response = await fetch(api);
+
+        const text = await response.text();
+
+        let data;
+
+        try {
+
+            data = JSON.parse(text);
+
+        } catch (e) {
+
+            return res.json({
+                error: '接口JSON错误',
+                raw: text
+            });
+        }
+
+        if (
+            !data ||
+            !data.data ||
+            !data.data.playAddr
+        ) {
+
+            return res.json({
+                error: '解析失败',
+                raw: data
+            });
+        }
+
+        let videoUrl = data.data.playAddr;
+
+        videoUrl = videoUrl.replace(/\\\//g, '/');
+
+        res.json({
+            video: videoUrl,
+            title: data.data.desc || '',
+            cover: data.data.cover || ''
+        });
+
+    } catch (e) {
+
+        console.error(e);
+
+        res.json({
+            error: e.toString()
+        });
+    }
+});
 app.get('/', (req, res) => {
 
     res.send('API OK');
