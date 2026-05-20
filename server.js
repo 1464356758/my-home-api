@@ -7,7 +7,7 @@ app.use(express.json({ limit: "50mb" }));
 
 // 你的 Cloudflare Worker
 const WORKER_URL =
-  "https://你的workers地址.workers.dev/";
+  "https://my-homepage-api.qq1464356758.workers.dev/";
 
 
 // 读取主页数据
@@ -63,8 +63,8 @@ app.get("/video", async (req, res) => {
       });
     }
 
-    const api =
-      "https://api.5ikf.top/api/jmp?dm=sy858&key=82743b1715e2496ed8b7b06454d7494e&url=" +
+  const api =
+      "https://proud-morning-d30b.qq1464356758.workers.dev/?url=" +
       encodeURIComponent(url);
 
     const r = await fetch(api);
