@@ -1,88 +1,119 @@
 const express = require("express");
-const fetch = require("node-fetch");
+const cors = require("cors");
+const axios = require("axios");
 
 const app = express();
 
-app.use(express.json({ limit: "50mb" }));
+app.use(cors());
+app.use(express.json());
 
-// 你的 Cloudflare Worker
-const WORKER_URL =
+/*
+========================
+配置区域
+========================
+*/
+
+// 你的 Cloudflare 数据接口
+const DATA_API =
   "https://my-homepage-api.qq1464356758.workers.dev/";
 
+// 你的 Cloudflare 视频解析接口
+const VIDEO_API =
+  "https://proud-morning-d30b.qq1464356758.workers.dev/";
 
-// 读取主页数据
-app.get("/load", async (req, res) => {
+/*
+========================
+测试接口
+========================
+*/
+
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "Render API 运行正常"
+  });
+});
+
+/*
+========================
+获取主页数据
+========================
+*/
+
+app.get("/api/data", async (req, res) => {
   try {
-    const r = await fetch(WORKER_URL);
-    const d = await r.text();
+    const response = await axios.get(DATA_API);
 
-    res.setHeader("Content-Type", "application/json");
-    res.send(d);
-  } catch (e) {
-    res.status(500).send({
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({
       success: false,
-      error: e.toString()
+      error: err.message
     });
   }
 });
 
+/*
+========================
+保存主页数据
+========================
+*/
 
-// 保存主页数据
-app.post("/save", async (req, res) => {
+app.post("/api/save", async (req, res) => {
   try {
-    const r = await fetch(WORKER_URL, {
-      method: "POST",
+    const response = await axios.post(DATA_API, req.body, {
       headers: {
-        "Content-Type": "application/json",
-        "X-Admin-Password": "mypage123"
-      },
-      body: JSON.stringify(req.body)
+        "Content-Type": "application/json"
+      }
     });
 
-    const d = await r.text();
-
-    res.send(d);
-  } catch (e) {
-    res.status(500).send({
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({
       success: false,
-      error: e.toString()
+      error: err.message
     });
   }
 });
 
+/*
+========================
+视频解析代理
+========================
+*/
 
-// 视频解析
-app.get("/video", async (req, res) => {
+app.get("/api/video", async (req, res) => {
   try {
     const url = req.query.url;
 
     if (!url) {
-      return res.send({
+      return res.status(400).json({
         success: false,
-        error: "缺少url"
+        error: "缺少 url 参数"
       });
     }
 
-  const api =
-      "https://proud-morning-d30b.qq1464356758.workers.dev/?url=" +
-      encodeURIComponent(url);
+    const response = await axios.get(
+      `${VIDEO_API}?url=${encodeURIComponent(url)}`
+    );
 
-    const r = await fetch(api);
-
-    const d = await r.text();
-
-    res.setHeader("Content-Type", "application/json");
-    res.send(d);
-
-  } catch (e) {
-    res.status(500).send({
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({
       success: false,
-      error: e.toString()
+      error: err.message
     });
   }
 });
 
+/*
+========================
+启动服务
+========================
+*/
 
-app.listen(process.env.PORT || 3000, () => {
-  console.log("API RUNNING");
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log("服务启动成功：" + PORT);
 });
