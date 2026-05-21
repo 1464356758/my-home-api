@@ -1,55 +1,68 @@
-// server.js
-// 本地开发服务器（可选）
-// 如果你只是部署 Cloudflare Workers，其实不需要这个文件。
-// 这个文件用于本地 Node.js 测试。
+const express = require('express');
+const fetch = require('node-fetch');
+const app = express();
 
-const http = require("http");
-const fs = require("fs");
-const path = require("path");
+app.use(express.json());
 
-const PORT = 3000;
+// JsonLight 密钥（你已有的）
+const JSONLIGHT_KEY = 'e56101cf53ce13ab';
+const DATA_API_URL = `https://api.json.lighttools.net/json/${JSONLIGHT_KEY}`;
 
-const mimeTypes = {
-  ".html": "text/html",
-  ".css": "text/css",
-  ".js": "application/javascript",
-  ".json": "application/json",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".gif": "image/gif",
-  ".svg": "image/svg+xml",
-  ".mp4": "video/mp4"
-};
+// 视频 API 基础地址
+const VIDEO_API_BASE = 'https://api.5ikf.top/api/jmp?dm=sy858&key=82743b1715e2496ed8b7b06454d7494e&url=';
 
-const server = http.createServer((req, res) => {
-  let filePath = "." + req.url;
-
-  if (filePath === "./") {
-    filePath = "./index.html";
+// ========== 数据存取代理 ==========
+app.get('/api/data', async (req, res) => {
+  try {
+    const response = await fetch(DATA_API_URL);
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
+});
 
-  const extname = path.extname(filePath);
-  const contentType = mimeTypes[extname] || "application/octet-stream";
+app.post('/api/data', async (req, res) => {
+  try {
+    const response = await fetch(DATA_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body)
+    });
+    const result = await response.json();
+    res.json({ success: true, result });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
-  fs.readFile(filePath, (err, content) => {
-    if (err) {
-      if (err.code === "ENOENT") {
-        res.writeHead(404, { "Content-Type": "text/plain" });
-        res.end("404 Not Found");
-      } else {
-        res.writeHead(500);
-        res.end("Server Error");
-      }
-    } else {
-      res.writeHead(200, {
-        "Content-Type": contentType
+// ========== 视频解析代理 ==========
+app.get('/api/video', async (req, res) => {
+  const { url } = req.query;
+  if (!url) {
+    return res.status(400).json({ error: '请传入B站链接' });
+  }
+  try {
+    const apiUrl = VIDEO_API_BASE + encodeURIComponent(url);
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+    if (data && data.data && data.data.playAddr) {
+      // 处理反斜杠，提取纯净链接
+      const videoUrl = data.data.playAddr.replace(/\\\//g, '/');
+      const title = data.data.desc || '';
+      const cover = data.data.cover ? data.data.cover.replace(/\\\//g, '/') : '';
+      res.json({
+        video: videoUrl,
+        title: title,
+        cover: cover
       });
-      res.end(content, "utf-8");
+    } else {
+      res.status(500).json({ error: '解析失败' });
     }
-  });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-server.listen(PORT, () => {
-  console.log(`服务器运行中: http://localhost:${PORT}`);
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
