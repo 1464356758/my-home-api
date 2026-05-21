@@ -1,7 +1,10 @@
 const express = require('express');
 const fetch = require('node-fetch');
+const cors = require('cors'); // 引入 cors 中间件
 const app = express();
 
+// 启用 CORS，允许所有来源访问
+app.use(cors());
 app.use(express.json());
 
 // JsonLight 密钥（你已有的）
@@ -47,7 +50,6 @@ app.get('/api/video', async (req, res) => {
     const response = await fetch(apiUrl);
     const data = await response.json();
     if (data && data.data && data.data.playAddr) {
-      // 处理反斜杠，提取纯净链接
       const videoUrl = data.data.playAddr.replace(/\\\//g, '/');
       const title = data.data.desc || '';
       const cover = data.data.cover ? data.data.cover.replace(/\\\//g, '/') : '';
