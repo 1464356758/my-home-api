@@ -61,9 +61,14 @@ app.get('/api/video', async (req, res) => {
 });
 
 // ========== AI 对话 (智谱 GLM-4.7-Flash 免费模型) ==========
+
 app.post('/api/ai', async (req, res) => {
   try {
     const { messages } = req.body;
+    
+    // ★ 增加1秒延时，避免触发速率限制
+    await new Promise(r => setTimeout(r, 1000));
+    
     const response = await fetch(ZHIPU_API_URL, {
       method: 'POST',
       headers: {
@@ -77,7 +82,6 @@ app.post('/api/ai', async (req, res) => {
         max_tokens: 2048
       })
     });
-
     const data = await response.json();
     if (data.error) {
       return res.status(400).json({ error: data.error.message });
