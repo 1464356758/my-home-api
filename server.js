@@ -15,7 +15,7 @@ const CF_WORKER_DATA = 'https://my-homepage-api.qq1464356758.workers.dev';
 const VIDEO_API_BASE = 'https://api.5ikf.top/api/jmp?dm=sy858&key=82743b1715e2496ed8b7b06454d7494e&url=';
 
 // 3. 智谱 AI 配置（GLM-4-Flash 永久免费模型）
-const ZHIPU_API_KEY = 'sk-67f7306bc5a94db2939aef261b1e0464';
+const ZHIPU_API_KEY = '3d13c85a598545139fe0e32b0fc719c8.ld0tYqbt9LP094LZ';
 const ZHIPU_API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
 
 // ========== 数据存取（转发 Cloudflare Worker） ==========
