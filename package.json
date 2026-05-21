@@ -1,7 +1,7 @@
 {
   "name": "my-homepage-backend",
   "version": "1.0.0",
-  "description": "个人主页后端 - 中转 Cloudflare Workers",
+  "description": "个人主页后端 - 数据/视频/AI代理",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
