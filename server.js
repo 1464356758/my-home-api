@@ -1,20 +1,20 @@
 const express = require('express');
 const fetch = require('node-fetch');
-const cors = require('cors'); // 引入 cors 中间件
+const cors = require('cors');
 const app = express();
 
 // 启用 CORS，允许所有来源访问
 app.use(cors());
 app.use(express.json());
 
-// JsonLight 密钥（你已有的）
+// JsonLight 密钥
 const JSONLIGHT_KEY = 'e56101cf53ce13ab';
 const DATA_API_URL = `https://api.json.lighttools.net/json/${JSONLIGHT_KEY}`;
 
 // 视频 API 基础地址
 const VIDEO_API_BASE = 'https://api.5ikf.top/api/jmp?dm=sy858&key=82743b1715e2496ed8b7b06454d7494e&url=';
 
-// ========== 数据存取代理 ==========
+// 数据存取代理
 app.get('/api/data', async (req, res) => {
   try {
     const response = await fetch(DATA_API_URL);
@@ -39,7 +39,7 @@ app.post('/api/data', async (req, res) => {
   }
 });
 
-// ========== 视频解析代理 ==========
+// 视频解析代理
 app.get('/api/video', async (req, res) => {
   const { url } = req.query;
   if (!url) {
@@ -53,11 +53,7 @@ app.get('/api/video', async (req, res) => {
       const videoUrl = data.data.playAddr.replace(/\\\//g, '/');
       const title = data.data.desc || '';
       const cover = data.data.cover ? data.data.cover.replace(/\\\//g, '/') : '';
-      res.json({
-        video: videoUrl,
-        title: title,
-        cover: cover
-      });
+      res.json({ video: videoUrl, title: title, cover: cover });
     } else {
       res.status(500).json({ error: '解析失败' });
     }
