@@ -8,13 +8,11 @@ app.use(express.json());
 
 // ========== 配置区域 ==========
 const CF_WORKER_DATA = 'https://my-homepage-api.qq1464356758.workers.dev';
+const VIDEO_API_BASE = 'https://api.5ikf.top/api/jmp?dm=sy858&key=82743b1715e2496ed8b7b06454d7494e&url=';
 const ZHIPU_API_KEY = '3d13c85a598545139fe0e32b0fc719c8.ld0tYqbt9LP094LZ';
 const ZHIPU_API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
 
-// 抖音视频备用解析 API（可自行更换）
-const DOUYIN_API = 'https://api.douyin.wtf/api?url=';
-
-// ========== 数据存取（保持不变） ==========
+// ========== 数据存取 ==========
 app.get('/api/data', async (req, res) => {
   try {
     const response = await fetch(CF_WORKER_DATA);
@@ -41,62 +39,36 @@ app.post('/api/data', async (req, res) => {
   }
 });
 
-// ========== 视频解析（B站 + 抖音，自主可控） ==========
-const bili = require('bilibili-parse'); // 引入 B站解析库
-
+// ========== 视频解析 ==========
 app.get('/api/video', async (req, res) => {
   const { url } = req.query;
-  if (!url) return res.status(400).json({ error: '请传入视频链接' });
-
+  if (!url) return res.status(400).json({ error: '请传入B站链接' });
   try {
-    const isDouyin = url.includes('douyin.com') || url.includes('douyinvod.com');
-    let videoUrl, title, cover;
-
-    if (isDouyin) {
-      // 抖音：使用备用 API
-      const apiUrl = DOUYIN_API + encodeURIComponent(url);
-      const resp = await fetch(apiUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Referer': 'https://www.douyin.com/'
-        }
-      });
-      const data = await resp.json();
-      if (data && data.video_data) {
-        videoUrl = data.video_data.backplay_url || '';
-        title = data.desc || '';
-        cover = data.cover || '';
-      } else {
-        throw new Error('抖音解析返回数据无效');
-      }
+    const apiUrl = VIDEO_API_BASE + encodeURIComponent(url);
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+    if (data && data.data && data.data.playAddr) {
+      const videoUrl = data.data.playAddr.replace(/\\\//g, '/');
+      const title = data.data.desc || '';
+      const cover = data.data.cover ? data.data.cover.replace(/\\\//g, '/') : '';
+      res.json({ video: videoUrl, title: title, cover: cover });
     } else {
-      // B站：使用 bilibili-parse 库
-      const videoInfo = await bili.getVideoInfo(url);
-      if (videoInfo && videoInfo.url) {
-        videoUrl = videoInfo.url;
-        title = videoInfo.title || '';
-        cover = videoInfo.pic || videoInfo.cover || '';
-      } else {
-        throw new Error('B站视频解析失败');
-      }
+      res.status(500).json({ error: '视频解析失败' });
     }
-
-    // 去除反斜杠转义（如果存在）
-    videoUrl = videoUrl.replace(/\\\//g, '/');
-    cover = cover.replace(/\\\//g, '/');
-
-    res.json({ video: videoUrl, title: title, cover: cover });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// ========== AI 对话（智谱 GLM-4.7-Flash 免费模型） ==========
+// ========== AI 对话 (智谱 GLM-4.7-Flash 免费模型) ==========
+
 app.post('/api/ai', async (req, res) => {
   try {
     const { messages } = req.body;
-    await new Promise(r => setTimeout(r, 1000)); // 防止速率限制
-
+    
+    // ★ 增加1秒延时，避免触发速率限制
+    await new Promise(r => setTimeout(r, 1000));
+    
     const response = await fetch(ZHIPU_API_URL, {
       method: 'POST',
       headers: {
@@ -130,4 +102,4 @@ app.post('/api/ai', async (req, res) => {
 app.get('/', (req, res) => res.send('✅ 个人主页后端已正常运行'));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));  
