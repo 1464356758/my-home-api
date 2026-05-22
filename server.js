@@ -8,7 +8,8 @@ app.use(express.json());
 
 // ========== 配置区域 ==========
 const CF_WORKER_DATA = 'https://my-homepage-api.qq1464356758.workers.dev';
-const VIDEO_API_BASE = 'https://api.5ikf.top/api/jmp?dm=sy858&key=82743b1715e2496ed8b7b06454d7494e&url=';
+// 新的视频解析 API（同时支持 B 站和抖音）
+const VIDEO_API_BASE = 'https://api.kuhuyun.com/api/aibasic/videoanalysis?url=';
 const ZHIPU_API_KEY = '3d13c85a598545139fe0e32b0fc719c8.ld0tYqbt9LP094LZ';
 const ZHIPU_API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
 
@@ -39,36 +40,36 @@ app.post('/api/data', async (req, res) => {
   }
 });
 
-// ========== 视频解析 ==========
+// ========== 视频解析（B站 + 抖音） ==========
 app.get('/api/video', async (req, res) => {
   const { url } = req.query;
-  if (!url) return res.status(400).json({ error: '请传入B站链接' });
+  if (!url) return res.status(400).json({ error: '请传入视频链接' });
+
   try {
     const apiUrl = VIDEO_API_BASE + encodeURIComponent(url);
     const response = await fetch(apiUrl);
     const data = await response.json();
-    if (data && data.data && data.data.playAddr) {
-      const videoUrl = data.data.playAddr.replace(/\\\//g, '/');
-      const title = data.data.desc || '';
-      const cover = data.data.cover ? data.data.cover.replace(/\\\//g, '/') : '';
+
+    // 根据新 API 的返回结构调整
+    if (data && data.code === 200 && data.data) {
+      const videoUrl = data.data.url || data.data.video;
+      const title = data.data.title || data.data.desc || '';
+      const cover = data.data.cover || '';
       res.json({ video: videoUrl, title: title, cover: cover });
     } else {
-      res.status(500).json({ error: '视频解析失败' });
+      res.status(500).json({ error: '视频解析失败，请检查链接是否正确' });
     }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// ========== AI 对话 (智谱 GLM-4.7-Flash 免费模型) ==========
-
+// ========== AI 对话（智谱 GLM-4.7-Flash 免费模型） ==========
 app.post('/api/ai', async (req, res) => {
   try {
     const { messages } = req.body;
-    
-    // ★ 增加1秒延时，避免触发速率限制
     await new Promise(r => setTimeout(r, 1000));
-    
+
     const response = await fetch(ZHIPU_API_URL, {
       method: 'POST',
       headers: {
