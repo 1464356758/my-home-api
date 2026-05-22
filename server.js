@@ -45,16 +45,8 @@ app.get('/api/video', async (req, res) => {
   if (!url) return res.status(400).json({ error: '请传入视频链接' });
 
   try {
-    // 根据链接类型选择不同的解析 API
-    let apiUrl;
-    if (url.includes('douyin.com') || url.includes('douyinvod.com')) {
-      // 抖音视频解析 API（请替换为你真实的抖音解析地址）
-      apiUrl = 'https://你的抖音解析API?url=' + encodeURIComponent(url);
-    } else {
-      // B站视频解析 API
-      apiUrl = VIDEO_API_BASE + encodeURIComponent(url);
-    }
-
+    // api.5ikf.top 同时支持 B 站和抖音，无需区分平台
+    const apiUrl = VIDEO_API_BASE + encodeURIComponent(url);
     const response = await fetch(apiUrl);
     const data = await response.json();
 
