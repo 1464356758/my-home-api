@@ -39,38 +39,36 @@ app.post('/api/data', async (req, res) => {
   }
 });
 
-// ========== 视频解析（B站 + 抖音） ==========
+// ========== 视频解析 ==========
 app.get('/api/video', async (req, res) => {
   const { url } = req.query;
-  if (!url) return res.status(400).json({ error: '请传入视频链接' });
-
+  if (!url) return res.status(400).json({ error: '请传入B站链接' });
   try {
-    // api.5ikf.top 同时支持 B 站和抖音，无需区分平台
     const apiUrl = VIDEO_API_BASE + encodeURIComponent(url);
     const response = await fetch(apiUrl);
     const data = await response.json();
-
     if (data && data.data && data.data.playAddr) {
       const videoUrl = data.data.playAddr.replace(/\\\//g, '/');
       const title = data.data.desc || '';
       const cover = data.data.cover ? data.data.cover.replace(/\\\//g, '/') : '';
       res.json({ video: videoUrl, title: title, cover: cover });
     } else {
-      res.status(500).json({ error: '视频解析失败，请检查链接是否正确' });
+      res.status(500).json({ error: '视频解析失败' });
     }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// ========== AI 对话（智谱 GLM-4.7-Flash 免费模型） ==========
+// ========== AI 对话 (智谱 GLM-4.7-Flash 免费模型) ==========
+
 app.post('/api/ai', async (req, res) => {
   try {
     const { messages } = req.body;
-
+    
     // ★ 增加1秒延时，避免触发速率限制
     await new Promise(r => setTimeout(r, 1000));
-
+    
     const response = await fetch(ZHIPU_API_URL, {
       method: 'POST',
       headers: {
