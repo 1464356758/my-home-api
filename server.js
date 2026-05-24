@@ -7,14 +7,29 @@ app.use(cors());
 app.use(express.json());
 
 // ========== 视频解析（使用“旧人阡陌”免费 API） ==========
-// ========== 临时测试：直接返回假数据，模拟解析成功 ==========
+// ========== 视频解析（备用稳定API） ==========
 app.get('/api/video', async (req, res) => {
-  const fakeVideoUrl = 'https://www.w3schools.com/html/mov_bbb.mp4';
-  const fakeTitle = '测试视频（假数据）';
-  const fakeCover = 'https://via.placeholder.com/400x300.png?text=Test';
-  res.json({ video: fakeVideoUrl, title: fakeTitle, cover: fakeCover });
-});
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ error: '请传入视频链接' });
 
+  try {
+    const apiUrl = 'https://api.uomg.com/api/long2dwz?url=' + encodeURIComponent(url) + '&type=video';
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+
+    if (data && data.code === 1 && data.data) {
+      res.json({
+        video: data.data.url || '',
+        title: data.data.title || '',
+        cover: data.data.cover || ''
+      });
+    } else {
+      res.status(500).json({ error: '视频解析失败' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: '视频解析服务异常' });
+  }
+});
 // ========== AI 对话（智谱 GLM-4.7-Flash 免费模型）==========
 app.post('/api/ai', async (req, res) => {
   try {
