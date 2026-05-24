@@ -6,31 +6,28 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ========== 视频解析（你原来的 API，保持不变） ==========
+// ========== 视频解析（api.5ikf.top） ==========
 app.get('/api/video', async (req, res) => {
   const { url } = req.query;
   if (!url) return res.status(400).json({ error: '请传入视频链接' });
 
   try {
-    const apiUrl = 'https://api.52api.net/api/jx?url=' + encodeURIComponent(url);
+    const apiUrl = 'https://api.5ikf.top/api/jmp?dm=sy858&key=82743b1715e2496ed8b7b06454d7494e&url=' + encodeURIComponent(url);
     const response = await fetch(apiUrl);
     const data = await response.json();
 
-    if (data && data.code === 200 && data.data) {
-      const videoUrl = data.data.url || '';
-      const title = data.data.title || '';
-      const cover = data.data.cover || '';
+    if (data && data.code === '0001' && data.data && data.data.playAddr) {
+      const videoUrl = data.data.playAddr.replace(/\\\//g, '/');
+      const title = data.data.desc || '';
+      const cover = data.data.cover ? data.data.cover.replace(/\\\//g, '/') : '';
       res.json({ video: videoUrl, title: title, cover: cover });
     } else {
-      console.error('解析失败，API返回:', JSON.stringify(data));
       res.status(500).json({ error: '视频解析失败: ' + (data.msg || '未知错误') });
     }
   } catch (error) {
-    console.error('视频解析请求异常:', error);
     res.status(500).json({ error: '视频解析服务异常: ' + error.message });
   }
 });
-
 // ========== AI 对话（保持不变） ==========
 app.post('/api/ai', async (req, res) => {
   try {
