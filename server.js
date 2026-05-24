@@ -6,32 +6,58 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ========== 临时测试：直接返回假数据，模拟解析成功 ==========
+// ========== 视频解析（使用“旧人阡陌”免费 API） ==========
+// ========== 视频解析（备用稳定API） ==========
 app.get('/api/video', async (req, res) => {
-  const fakeVideoUrl = 'https://www.w3schools.com/html/mov_bbb.mp4';
-  const fakeTitle = '测试视频（假数据）';
-  const fakeCover = 'https://via.placeholder.com/400x300.png?text=Test';
-  res.json({ video: fakeVideoUrl, title: fakeTitle, cover: fakeCover });
-});
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ error: '请传入视频链接' });
 
-// ========== 简历跳转接口（从QQ笔记提取链接） ==========
-app.get('/resume', async (req, res) => {
   try {
-    // 你的QQ笔记分享链接（固定不变）
-    const noteUrl = 'https://sharechain.qq.com/394e5b40c262a82540c7f8e615ca0e25?qq_aio_chat_type=2';
-    const response = await fetch(noteUrl);
-    const html = await response.text();
-    
-    // 从页面中提取 <span class="tit">链接</span>
-    const match = html.match(/<span class="tit">([^<]+)<\/span>/);
-    if (match && match[1]) {
-      // 重定向到提取出的链接
-      res.redirect(302, match[1].trim());
+    const apiUrl = 'https://api.uomg.com/api/long2dwz?url=' + encodeURIComponent(url) + '&type=video';
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+
+    if (data && data.code === 1 && data.data) {
+      res.json({
+        video: data.data.url || '',
+        title: data.data.title || '',
+        cover: data.data.cover || ''
+      });
     } else {
-      res.status(404).send('未找到简历链接，请检查QQ笔记内容');
+      res.status(500).json({ error: '视频解析失败' });
     }
   } catch (error) {
-    res.status(500).send('获取简历链接失败: ' + error.message);
+    res.status(500).json({ error: '视频解析服务异常' });
+  }
+});
+// ========== AI 对话（智谱 GLM-4.7-Flash 免费模型）==========
+app.post('/api/ai', async (req, res) => {
+  try {
+    const { messages } = req.body;
+    await new Promise(r => setTimeout(r, 1000)); // 防止速率限制
+
+    const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer 3d13c85a598545139fe0e32b0fc719c8.ld0tYqbt9LP094LZ'
+      },
+      body: JSON.stringify({
+        model: 'glm-4.7-flash',
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 2048
+      })
+    });
+    const data = await response.json();
+    if (data.error) return res.status(400).json({ error: data.error.message });
+    res.json({
+      choices: [{
+        message: { content: data.choices[0].message.content }
+      }]
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'AI 服务暂时不可用' });
   }
 });
 
@@ -96,37 +122,6 @@ app.post('/api/update-video', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: '更新异常: ' + error.message });
-  }
-});
-
-// ========== AI 对话（智谱 GLM-4.7-Flash 免费模型）==========
-app.post('/api/ai', async (req, res) => {
-  try {
-    const { messages } = req.body;
-    await new Promise(r => setTimeout(r, 1000));
-
-    const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer 3d13c85a598545139fe0e32b0fc719c8.ld0tYqbt9LP094LZ'
-      },
-      body: JSON.stringify({
-        model: 'glm-4.7-flash',
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 2048
-      })
-    });
-    const data = await response.json();
-    if (data.error) return res.status(400).json({ error: data.error.message });
-    res.json({
-      choices: [{
-        message: { content: data.choices[0].message.content }
-      }]
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'AI 服务暂时不可用' });
   }
 });
 
