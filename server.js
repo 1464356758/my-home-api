@@ -8,6 +8,7 @@ app.use(express.json());
 
 // ========== 视频解析（使用“旧人阡陌”免费 API） ==========
 // ========== 临时测试：直接返回假数据，模拟解析成功 ==========
+// ========== 临时测试：直接返回假数据，模拟解析成功 ==========
 app.get('/api/video', async (req, res) => {
   // 假数据，不调用外部 API，直接返回成功
   const fakeVideoUrl = 'https://www.w3schools.com/html/mov_bbb.mp4';
@@ -15,38 +16,6 @@ app.get('/api/video', async (req, res) => {
   const fakeCover = 'https://via.placeholder.com/400x300.png?text=Test';
   res.json({ video: fakeVideoUrl, title: fakeTitle, cover: fakeCover });
 });
-
-// ========== AI 对话（智谱 GLM-4.7-Flash 免费模型）==========
-app.post('/api/ai', async (req, res) => {
-  try {
-    const { messages } = req.body;
-    await new Promise(r => setTimeout(r, 1000)); // 防止速率限制
-
-    const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer 3d13c85a598545139fe0e32b0fc719c8.ld0tYqbt9LP094LZ'
-      },
-      body: JSON.stringify({
-        model: 'glm-4.7-flash',
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 2048
-      })
-    });
-    const data = await response.json();
-    if (data.error) return res.status(400).json({ error: data.error.message });
-    res.json({
-      choices: [{
-        message: { content: data.choices[0].message.content }
-      }]
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'AI 服务暂时不可用' });
-  }
-});
-
 // ========== 更新 GitHub 上的 homepage-data.json ==========
 app.post('/api/update-video', async (req, res) => {
   const { cardIndex, videoUrl, title, cover } = req.body;
