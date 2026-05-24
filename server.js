@@ -7,28 +7,13 @@ app.use(cors());
 app.use(express.json());
 
 // ========== 视频解析（使用“旧人阡陌”免费 API） ==========
+// ========== 临时测试：直接返回假数据，模拟解析成功 ==========
 app.get('/api/video', async (req, res) => {
-  const { url } = req.query;
-  if (!url) return res.status(400).json({ error: '请传入视频链接' });
-
-  try {
-    const apiUrl = 'https://api.52api.net/api/jx?url=' + encodeURIComponent(url);
-    const response = await fetch(apiUrl);
-    const data = await response.json();
-
-    if (data && data.code === 200 && data.data) {
-      const videoUrl = data.data.url || '';
-      const title = data.data.title || '';
-      const cover = data.data.cover || '';
-      res.json({ video: videoUrl, title: title, cover: cover });
-    } else {
-      console.error('解析失败，API返回:', JSON.stringify(data));
-      res.status(500).json({ error: '视频解析失败: ' + (data.msg || '未知错误') });
-    }
-  } catch (error) {
-    console.error('视频解析请求异常:', error);
-    res.status(500).json({ error: '视频解析服务异常: ' + error.message });
-  }
+  // 假数据，不调用外部 API，直接返回成功
+  const fakeVideoUrl = 'https://www.w3schools.com/html/mov_bbb.mp4';
+  const fakeTitle = '测试视频（假数据）';
+  const fakeCover = 'https://via.placeholder.com/400x300.png?text=Test';
+  res.json({ video: fakeVideoUrl, title: fakeTitle, cover: fakeCover });
 });
 
 // ========== AI 对话（智谱 GLM-4.7-Flash 免费模型）==========
